@@ -229,7 +229,7 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-
+                Log.d("WebViewLog", "URL 호출됨: " + url);
                 Uri uri = Uri.parse(url);
                 Uri org_uri = Uri.parse("https://" + target_url + "/");
 
@@ -285,16 +285,26 @@ public class MainActivity extends AppCompatActivity {
                     return true;
                 } else if(url.startsWith("https://checkout-pretest.tosspayments.com/")) {
                     return true;
-                } else {
-                    //호스트가 다르면 크롬 브라우저 실행
-                    if(org_uri.getHost().equals(uri.getHost())) {
-                        view.loadUrl(url);
-                    } else {
-                        Intent browser_intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                        startActivity(browser_intent);
-                    }
+                }
+
+                // 카카오 계정 로그인 페이지는 내부 웹뷰에서 열기
+                if (url.startsWith("https://kauth.kakao.com/") || url.startsWith("https://accounts.kakao.com/") || url.startsWith("https://logins.daum.net/")) {
+                    Log.d("WebViewLog", "카카오 계정 로그인 페이지 → 내부에서 열기");
+                    view.loadUrl(url);
                     return true;
                 }
+
+                // 호스트가 같으면 내부 WebView에서 열기
+                if (org_uri.getHost().equals(uri.getHost())) {
+                    view.loadUrl(url);
+                } else {
+                    // 나머지는 외부 브라우저
+                    Log.d("WebViewLog", "외부 링크 → 브라우저로 전송: " + url);
+                    Intent browser_intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    startActivity(browser_intent);
+                }
+
+                return true;
             }
 
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl){
