@@ -493,6 +493,27 @@ public class MainActivity extends AppCompatActivity {
                 webViewDialog.setWebViewClient(new WebViewClient() {
                     @Override
                     public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                        String url = request.getUrl().toString();
+
+                        if (url.startsWith("intent://")) {
+                            try {
+                                Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
+                                if (intent != null) {
+                                    // 설치된 앱이 있으면 실행
+                                    if (intent.getPackage() != null) {
+                                        startActivity(intent);
+                                    }
+                                    return true;
+                                }
+                            } catch (Exception e) {
+                                // 앱이 설치되지 않았으면 마켓으로 이동
+                                String fallbackUrl = "market://details?id=" + getPackageNameFromIntentUrl(url);
+                                Intent marketIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(fallbackUrl));
+                                startActivity(marketIntent);
+                                return true;
+                            }
+                        }
+
                         return super.shouldOverrideUrlLoading(view, request);
                     }
 
@@ -638,6 +659,15 @@ public class MainActivity extends AppCompatActivity {
 //            }
 //        });
 
+    }
+
+    private String getPackageNameFromIntentUrl(String intentUrl) {
+        try {
+            Intent intent = Intent.parseUri(intentUrl, Intent.URI_INTENT_SCHEME);
+            return intent.getPackage();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override
